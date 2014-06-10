@@ -1,6 +1,7 @@
-# Check SWIG Python module wrapping lal
-# Author: Karl Wette, 2011, 2012
+# Check SWIG Python bindings for LAL
+# Author: Karl Wette, 2011--2014
 
+import sys
 import warnings
 import datetime
 import numpy
@@ -25,6 +26,8 @@ if not lal.lalNoDebug:
     mem3 = lal.CreateREAL8Vector(3)
     mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.lalDimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
+    sys.stdout.flush()
+    sys.stderr.flush()
     try:
         lal.CheckMemoryLeaks()
         expected_exception = True
@@ -32,11 +35,34 @@ if not lal.lalNoDebug:
         pass
     assert(not expected_exception)
     print("*** above should be an error message from CheckMemoryLeaks() ***")
-    del mem1, mem2, mem3, mem4
+    del mem1
+    del mem2
+    del mem3
+    del mem4
     lal.CheckMemoryLeaks()
     print("PASSED memory allocation")
 else:
     print("skipped memory allocation")
+
+# check object parent tracking
+print("checking object parent tracking ...")
+a = lal.gsl_vector(3)
+a.data = [1.1, 2.2, 3.3]
+b = a.data
+assert(not b.flags['OWNDATA'])
+assert((b == [1.1, 2.2, 3.3]).all())
+del a
+assert((b == [1.1, 2.2, 3.3]).all())
+ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.lalDimensionlessUnit, 10)
+ts.data.data = range(0, 10)
+for i in range(0, 7):
+    v = ts.data
+assert((v.data == range(0, 10)).all())
+del ts
+assert((v.data == range(0, 10)).all())
+del v
+lal.CheckMemoryLeaks()
+print("PASSED object parent tracking")
 
 # check equal return/first argument type handling
 print("checking equal return/first argument type handling")
@@ -50,7 +76,8 @@ sv2 = lal.AppendString2Vector(sv, "4")
 assert(sv.length == 4)
 assert(sv2.length == 4)
 assert(sv == sv2)
-del sv, sv2
+del sv
+del sv2
 lal.CheckMemoryLeaks()
 ts = lal.CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.lalHertzUnit, 10)
 assert(ts.data.length == 10)
@@ -62,7 +89,8 @@ ts2 = lal.ResizeREAL8TimeSeries(ts, 0, 40)
 assert(ts.data.length == 40)
 assert(ts2.data.length == 40)
 assert(ts == ts2)
-del ts, ts2
+del ts
+del ts2
 lal.CheckMemoryLeaks()
 print("PASSED equal return/first argument type handling")
 
@@ -84,6 +112,7 @@ lal.CheckMemoryLeaks()
 print("PASSED string conversions")
 
 # check static vector/matrix conversions
+print("checking static vector/matrix conversions ...")
 lalcvar.swig_lal_test_struct_vector[0] = lalcvar.swig_lal_test_struct_const
 assert(lalcvar.swig_lal_test_struct_vector[0].n == lalcvar.swig_lal_test_struct_const.n)
 assert(lalcvar.swig_lal_test_struct_vector[0].i == lalcvar.swig_lal_test_struct_const.i)
@@ -209,7 +238,9 @@ rv = lal.CreateREAL8Vector(5)
 cm = lal.CreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
-del iv, rv, cm
+del iv
+del rv
+del cm
 rv0 = lal.CreateREAL8Vector(0)
 assert(rv0.length == 0)
 assert(len(rv0.data) == 0)
@@ -225,7 +256,9 @@ rv = lal.gsl_vector(5)
 cm = lal.gsl_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
-del iv, rv, cm
+del iv
+del rv
+del cm
 rv1 = lal.gsl_vector(1)
 rv1.data[0] = 1
 del rv1
@@ -343,29 +376,14 @@ except:
     pass
 assert(not expected_exception)
 assert(lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5))
-del t0, t1, t2, t3, t4struct, t5
+del t0
+del t1
+del t2
+del t3
+del t4struct
+del t5
 lal.CheckMemoryLeaks()
 print("PASSED LIGOTimeGPS operations")
-
-# check object parent tracking
-print("checking object parent tracking ...")
-a = lal.gsl_vector(3)
-a.data = [1.1, 2.2, 3.3]
-b = a.data
-assert(not b.flags['OWNDATA'])
-assert((b == [1.1, 2.2, 3.3]).all())
-del a
-assert((b == [1.1, 2.2, 3.3]).all())
-ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.lalDimensionlessUnit, 10)
-ts.data.data = range(0, 10)
-for i in range(0, 7):
-    v = ts.data
-assert((v.data == range(0, 10)).all())
-del ts
-assert((v.data == range(0, 10)).all())
-del v
-lal.CheckMemoryLeaks()
-print("PASSED object parent tracking")
 
 # passed all tests!
 print("PASSED all tests")

@@ -1,6 +1,7 @@
-## Check SWIG Octave module wrapping lal
-## Author: Karl Wette, 2011, 2012
+## Check SWIG Octave bindings for LAL
+## Author: Karl Wette, 2011--2014
 
+crash_dumps_octave_core(0);
 expected_exception = 0;
 
 ## check module load
@@ -25,12 +26,40 @@ if !lalcvar.lalNoDebug
   end_try_catch
   assert(!expected_exception);
   disp("*** above should be an error message from CheckMemoryLeaks() ***");
-  clear ans mem1 mem2 mem3 mem4;
+  clear mem1;
+  clear mem2;
+  clear mem3;
+  clear mem4;
+  clear ans;
   CheckMemoryLeaks();
   disp("PASSED memory allocation");
 else
   disp("skipped memory allocation");
 endif
+
+## check object parent tracking
+disp("checking object parent tracking ...");
+a = new_gsl_vector(3);
+a.data = [1.1; 2.2; 3.3];
+b = a.data;
+assert(strcmp(typeinfo(b), "swiglal_oct_array_view_double"));
+assert(all(b == [1.1; 2.2; 3.3]));
+clear a;
+clear ans;
+assert(all(b == [1.1; 2.2; 3.3]));
+ts = CreateREAL8TimeSeries("test", LIGOTimeGPS(0), 0, 0.1, lalcvar.lalDimensionlessUnit, 10);
+ts.data.data = (1:10)';
+for i = 1:7
+  v = ts.data;
+endfor
+assert(v.data == (1:10)');
+clear ts;
+clear ans;
+assert(v.data == (1:10)');
+clear v;
+clear ans;
+CheckMemoryLeaks();
+disp("PASSED object parent tracking");
 
 ## check equal return/first argument type handling
 disp("checking equal return/first argument type handling");
@@ -44,7 +73,9 @@ sv2 = AppendString2Vector(sv, "4");
 assert(sv.length == 4);
 assert(sv2.length == 4);
 assert(swig_this(sv) == swig_this(sv2));
-clear ans sv sv2;
+clear sv;
+clear sv2;
+clear ans;
 CheckMemoryLeaks();
 ts = CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lalcvar.lalHertzUnit, 10);
 assert(ts.data.length == 10)
@@ -56,7 +87,9 @@ ts2 = ResizeREAL8TimeSeries(ts, 0, 40);
 assert(ts.data.length == 40);
 assert(ts2.data.length == 40);
 assert(swig_this(ts) == swig_this(ts2));
-clear ans ts ts2;
+clear ts;
+clear ts2;
+clear ans;
 CheckMemoryLeaks();
 disp("PASSED equal return/first argument type handling");
 
@@ -74,7 +107,8 @@ assert(sv.length == 4);
 for i = 1:4
   assert(strcmp(sv.data{i}, strs{i}));
 endfor
-clear ans sv;
+clear sv;
+clear ans;
 CheckMemoryLeaks();
 disp("PASSED string conversions");
 
@@ -109,7 +143,8 @@ for i = 1:3
   sts.evec(i) = 2*i + 3;
   assert(sts.evec(i) == (2*i + 3));
 endfor
-clear ans sts;
+clear sts;
+clear ans;
 assert(!any(lalcvar.swig_lal_test_enum_vector));
 assert(!any(lalcvar.swig_lal_test_enum_matrix(:)));
 assert(length(lalcvar.swig_lal_test_empty_INT4_vector) == 0);
@@ -199,14 +234,19 @@ rv = CreateREAL8Vector(5);
 cm = CreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
-clear ans iv rv cm;
+clear iv;
+clear rv;
+clear cm;
+clear ans;
 rv0 = CreateREAL8Vector(0);
 assert(rv0.length == 0);
 assert(length(rv0.data) == 0);
-clear ans rv0;
+clear rv0;
+clear ans;
 rv1 = CreateREAL8Vector(1);
 rv1.data(1) = 1;
-clear ans rv1;
+clear rv1;
+clear ans;
 CheckMemoryLeaks();
 disp("PASSED dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
@@ -215,10 +255,14 @@ rv = new_gsl_vector(5);
 cm = new_gsl_matrix_complex_float(4, 6);
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2);
-clear ans iv rv cm;
+clear iv;
+clear rv;
+clear cm;
+clear ans;
 rv1 = new_gsl_vector(1);
 rv1.data(1) = 1;
-clear ans rv1;
+clear rv1;
+clear ans;
 disp("PASSED dynamic vector/matrix conversions (GSL)");
 
 ## check fixed and dynamic arrays typemaps
@@ -235,7 +279,7 @@ try
 end_try_catch
 assert(!expected_exception);
 try
-  lal.swig_lal_test_viewin_array2([1.2,3.4; 0,0; 0,0], 0);
+  swig_lal_test_viewin_array2([1.2,3.4; 0,0; 0,0], 0);
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
@@ -251,7 +295,8 @@ for i = 1:ap.length
     assert(ap.data{i}.data(j) == 42*ap.length*(i-1) + (j-1));
   endfor
 endfor
-clear ans ap;
+clear ap;
+clear ans;
 CheckMemoryLeaks();
 disp("PASSED dynamic array of pointers access");
 
@@ -324,30 +369,15 @@ try
 end_try_catch
 assert(!expected_exception);
 assert(swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == swig_lal_test_noptrgps(1234.5))
-clear ans t0 t1 t2 t3 t4struct t5;
+clear t0;
+clear t1;
+clear t2;
+clear t3;
+clear t4struct;
+clear t5;
+clear ans;
 CheckMemoryLeaks();
 disp("PASSED LIGOTimeGPS operations");
-
-## check object parent tracking
-disp("checking object parent tracking ...");
-a = lal.new_gsl_vector(3);
-a.data = [1.1; 2.2; 3.3];
-b = a.data;
-assert(strcmp(typeinfo(b), "swiglal_oct_array_view_double"));
-assert(all(b == [1.1; 2.2; 3.3]));
-clear ans a;
-assert(all(b == [1.1; 2.2; 3.3]));
-ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lalcvar.lalDimensionlessUnit, 10);
-ts.data.data = (1:10)';
-for i = 1:7
-  v = ts.data;
-endfor
-assert(v.data == (1:10)');
-clear ans ts;
-assert(v.data == (1:10)');
-clear ans v;
-CheckMemoryLeaks();
-disp("PASSED object parent tracking");
 
 ## passed all tests!
 disp("PASSED all tests");
