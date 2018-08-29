@@ -4,6 +4,7 @@
 import sys
 import warnings
 import datetime
+import pickle
 import numpy
 expected_exception = False
 
@@ -22,10 +23,6 @@ from lal import globalvar as lalglobalvar
 lal_c_si = lal.C_SI
 lal_180_pi = lal.LAL_180_PI
 print("PASSED module load")
-
-# FIXME: delete this when we can depend on swig >= 3.0.9,
-# which fixed https://github.com/swig/swig/pull/617
-swig_division_coercion_works = sys.version_info.major <= 2 or lal.swig_version >= 0x030009
 
 # check memory allocation
 print("checking memory allocation ...")
@@ -1054,25 +1051,21 @@ assert(t2 + 5.5 >= t1 and t2 + 3 != t2)
 assert(is_value_and_type(t2 - 5, t0, LIGOTimeGPS))
 assert(is_value_and_type(t1 * 3, 31.5, LIGOTimeGPS))
 assert(is_value_and_type(3 * t1, 31.5, LIGOTimeGPS))
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    assert(is_value_and_type(t2 / 2.5, 2, LIGOTimeGPS))
-    assert(is_value_and_type(21 / t1, 2, LIGOTimeGPS))
+assert(is_value_and_type(t2 / 2.5, 2, LIGOTimeGPS))
+assert(is_value_and_type(21 / t1, 2, LIGOTimeGPS))
 assert(is_value_and_type(t1 + t2, 15.5, LIGOTimeGPS))
 assert(is_value_and_type(t1 - t2, 5.5, LIGOTimeGPS))
 assert(is_value_and_type(t1 * t2, 52.5, LIGOTimeGPS))
 assert(is_value_and_type(t2 * t1, 52.5, LIGOTimeGPS))
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    assert(is_value_and_type(t1 / t2, 2.1, LIGOTimeGPS))
+assert(is_value_and_type(t1 / t2, 2.1, LIGOTimeGPS))
 assert(is_value_and_type(t1 % t2, 0.5, LIGOTimeGPS))
 assert(t1 > t2 and t2 < t1 and t1 >= t2 and t2 <= t1)
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
-    assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
+assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
+assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
 assert(LIGOTimeGPS("-62997760.825036067") == LIGOTimeGPS("-47044285.062262587") - LIGOTimeGPS("15953475.76277348"))
 assert(LIGOTimeGPS("-6542354.389038577") == LIGOTimeGPS("-914984.929117316") * 7.1502318572066237)
 assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"))
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
+assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
 assert(str(t1) == "812345678.25")
 assert(type(eval(repr(t1))) is type(t1))
@@ -1124,9 +1117,8 @@ assert(is_value_and_type(tsw - tmy, tsw - tsw, LIGOTimeGPS))
 assert(is_value_and_type(tmy - tsw, tsw - tsw, LIGOTimeGPS))
 assert(is_value_and_type(tsw * tmy, tsw * tsw, LIGOTimeGPS))
 assert(is_value_and_type(tmy * tsw, tsw * tsw, LIGOTimeGPS))
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    assert(is_value_and_type(tsw / tmy, tsw / tsw, LIGOTimeGPS))
-    assert(is_value_and_type(tmy / tsw, tsw / tsw, LIGOTimeGPS))
+assert(is_value_and_type(tsw / tmy, tsw / tsw, LIGOTimeGPS))
+assert(is_value_and_type(tmy / tsw, tsw / tsw, LIGOTimeGPS))
 assert(lal.swig_lal_test_noptrgps(tmy) == lal.swig_lal_test_noptrgps(tsw))
 del tsw
 lal.CheckMemoryLeaks()
@@ -1138,9 +1130,8 @@ u1 = lal.Unit("kg m s^-2")
 assert(type(lal.Unit(u1)) is lal.Unit)
 assert(is_value_and_type(u1, lal.NewtonUnit, lal.Unit))
 assert(str(u1) == "m kg s^-2")
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
-    assert(is_value_and_type(u2, u1, lal.Unit))
+u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
+assert(is_value_and_type(u2, u1, lal.Unit))
 u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
 assert(is_value_and_type(u2, u1**(1,2), lal.Unit))
 try:
@@ -1152,29 +1143,75 @@ assert(not expected_exception)
 u1 *= lal.MeterUnit
 assert(is_value_and_type(u1, lal.JouleUnit, lal.Unit))
 assert(repr(u1) == "m^2 kg s^-2")
-if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
-    u1 /= lal.SecondUnit
-    assert(is_value_and_type(u1, lal.WattUnit, lal.Unit))
-    assert(u1 == "m^2 kg s^-3")
-    u1 *= 1000
-    assert(u1 == lal.KiloUnit * lal.WattUnit)
-    assert(u1 == 1000 * lal.WattUnit)
-    assert(u1 == lal.WattUnit * 1000)
-    assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit)
-    assert(int(u1) == 1000)
-    u1 /= 10000
-    assert(u1 == 100 * lal.MilliUnit * lal.WattUnit)
-    try:
-        u1 *= 1.234
-        expected_exception = True
-    except:
-        pass
-    assert(not expected_exception)
-    assert(u1.norm() == u1)
+u1 /= lal.SecondUnit
+assert(is_value_and_type(u1, lal.WattUnit, lal.Unit))
+assert(u1 == "m^2 kg s^-3")
+u1 *= 1000
+assert(u1 == lal.KiloUnit * lal.WattUnit)
+assert(u1 == 1000 * lal.WattUnit)
+assert(u1 == lal.WattUnit * 1000)
+assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit)
+assert(int(u1) == 1000)
+u1 /= 10000
+assert(u1 == 100 * lal.MilliUnit * lal.WattUnit)
+try:
+    u1 *= 1.234
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+assert(u1.norm() == u1)
 del u1
 del u2
 lal.CheckMemoryLeaks()
 print("PASSED LALUnit operations")
+
+#
+# FIXME: pickling requires SWIG >= 3.0.11 because of a bug that was fixed in
+# that version. Here's the relevant entry from the SWIG changelog:
+#
+# 2016-10-13: wsfulton
+# [Python] Issue #808 - fix Python pickling and metaclass for builtin wrappers.
+# The metaclass (SwigPyObjectType) for SWIG objects was not defined in
+# a way that let importlib successfully import the Python wrappers.
+# The pickle module previously failed to pickle objects because it couldn't
+# determine what module the SWIG wrapped objects were in.
+#
+if lal.swig_version >= 0x030011:
+    print("checking pickle ...")
+    for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
+                     'REAL4', 'REAL8', 'COMPLEX8', 'COMPLEX16']:
+
+        creator = getattr(lal, 'Create{}FrequencySeries'.format(datatype))
+        a = creator(
+            'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
+        a.data.data = numpy.arange(1024)
+        pickled = pickle.dumps(a, 0)
+        print(pickled)
+        b = pickle.loads(pickled)
+        assert type(a) == type(b)
+        assert a.name == b.name
+        assert a.epoch == b.epoch
+        assert a.f0 == b.f0
+        assert a.deltaF == b.deltaF
+        assert a.sampleUnits == b.sampleUnits
+        assert (a.data.data == b.data.data).all()
+
+        creator = getattr(lal, 'Create{}TimeSeries'.format(datatype))
+        a = creator(
+            'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
+        a.data.data = numpy.arange(1024)
+        pickled = pickle.dumps(a, 0)
+        print(pickled)
+        b = pickle.loads(pickled)
+        assert type(a) == type(b)
+        assert a.name == b.name
+        assert a.epoch == b.epoch
+        assert a.f0 == b.f0
+        assert a.deltaT == b.deltaT
+        assert a.sampleUnits == b.sampleUnits
+        assert (a.data.data == b.data.data).all()
+    print("PASSED pickle")
 
 # passed all tests!
 print("PASSED all tests")
