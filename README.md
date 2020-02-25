@@ -48,7 +48,20 @@ SWIGLAL includes extensive tests of the Python and Octave wrappers, provided by
 the files `SWIGLALTest.h`, `SWIGTest.c`, `SWIGTestLALPython`, and
 `SWIGTestLALOctave.m`.
 
-[lalsuite]: https://doi.org/10.7935/GT1W-FZ16
-[octave]:   https://www.gnu.org/software/octave/
-[python]:   https://www.python.org/
-[swig]:     http://www.swig.org/
+## Documentation
+
+SWIGLAL is documented as part of LALSuite. The [LALSuite Doxygen
+documentation][swiglaldoc] provides detailed documentation of the definitions
+provided by `SWIGCommon.i`, `SWIGLALAlpha.i`, and `SWIGLALOmega.i`.
+
+## Support
+
+SWIGLAL is supported as part of LALSuite. The [LALSuite contributing
+guide][lalsuitectrb] provides information on reporting issues.
+
+[lalsuite]:     https://doi.org/10.7935/GT1W-FZ16
+[lalsuitectrb]: https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md
+[octave]:       https://www.gnu.org/software/octave/
+[python]:       https://www.python.org/
+[swig]:         http://www.swig.org/
+[swiglaldoc]:   https://lscsoft.docs.ligo.org/lalsuite/lal/group__lal__swig.html
