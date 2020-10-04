@@ -65,3 +65,11 @@ guide][lalsuitectrb] provides information on reporting issues.
 [python]:       https://www.python.org/
 [swig]:         http://www.swig.org/
 [swiglaldoc]:   https://lscsoft.docs.ligo.org/lalsuite/lal/group__lal__swig.html
+
+## License
+
+The files in this repository are dual-licensed under the GPL 2.0 license (or any
+later version), and the MIT (Expat) license. You can choose between one of them
+if you use the files in this repository.
+
+`SPDX-License-Identifier: GPL-2.0-or-later OR MIT`
